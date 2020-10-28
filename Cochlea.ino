@@ -1,5 +1,18 @@
 /*********
   Phil Malone
+  This version has the following attributes:
+  LED Type  DotStar
+  LED Num   25
+  LED Data  12
+  LED Clk   14
+  
+  Mic Type  I2S
+  Mic Data  33
+  Mic Clk   26
+  Mic WS    25
+  Sample Freq 32 kHz
+  Samples   1024
+  
 *********/
 
 #define FASTLED_INTERNAL
