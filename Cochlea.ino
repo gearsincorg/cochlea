@@ -35,7 +35,7 @@ TaskHandle_t Task2;
 #define AMPLITUDE         300         // Depending on your audio source level, you may need to alter this value. Can be used as a 'sensitivity' control.
 #define LED_DATA_PIN       12
 #define LED_CLOCK_PIN      14
-#define BRIGHNESS         255         // Brightness 0 - 255, 
+#define BRIGHTNESS        255         // Brightness 0 - 255, 
 #define NOISE             100         // Used as a crude noise filter, values below this are ignored
 #define BAND_HUE_STEP   (200/NUM_BANDS)
 
@@ -102,20 +102,20 @@ void SampleAudio( void * pvParameters ){
   
   // The I2S config as per the example
   const i2s_config_t i2s_config = {
-      .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX),  // Receive, not transfer
-      .sample_rate = SAMPLING_FREQ,                       // 40960 Hz
+      .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_PDM),  // Receive, not transfer, Power Density Modulation
+      .sample_rate = SAMPLING_FREQ,                       // 
       .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,       // could only get it to work with 32bits
       .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,        // use right channel
       .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
       .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,           // Interrupt level 1
       .dma_buf_count = 4,                                 // number of buffers
-      .dma_buf_len = 128                                  // 128 samples per buffer (minimum)
+      .dma_buf_len = AUDIO_SAMPLES                        // 
   };
 
   // The pin config as per the setup
   const i2s_pin_config_t pin_config = {
-      .bck_io_num = 26,                                   // Serial Clock (SCK)
-      .ws_io_num = 25,                                    // Word Select (WS)
+      .bck_io_num = I2S_PIN_NO_CHANGE,                    // Serial Clock (SCK)
+      .ws_io_num = 26,                                    // Word Select (WS)
       .data_out_num = I2S_PIN_NO_CHANGE,                  // not used (only for speakers)
       .data_in_num = 33                                   // Serial Data (SD)
   };
@@ -222,20 +222,23 @@ void FFTcode( void * pvParameters ){
         if (ledBrightness > BRIGHTNESS) 
           ledBrightness = BRIGHTNESS;
 
+        Serial.println(ledBrightness);
+
         // Display LED bucket in the correct Hue.
         leds[band].setHSV(band * BAND_HUE_STEP, 255, ledBrightness);
       }
+      Serial.println("-10 256");
 
       // Update LED display
       FastLED.show();
 
       // Display processing times
-      // uint32_t temp = micros();
-      // Serial.print("Cycle = ");
-      // Serial.print(temp - lastFFT );
-      // Serial.print(" (");
-      // Serial.print(startFFT - lastFFT);
-      // Serial.println(")");
+      uint32_t temp = micros();
+      //Serial.print("Cycle = ");
+      //Serial.print(temp - lastFFT );
+      //Serial.print(" (");
+      //Serial.print(startFFT - lastFFT);
+      //Serial.println(")");
       
       lastFFT = micros();
       
