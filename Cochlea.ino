@@ -28,14 +28,14 @@ TaskHandle_t Task2;
 
 ///=================  Shared Data =================
 #define SAMPLING_FREQ   32000
-#define AUDIO_SAMPLES    1024
-#define FREQ_BINS         512
-#define AUDIO_SAMPLES_2    10
-#define NUM_BANDS          25
+#define AUDIO_SAMPLES    2048
+#define FREQ_BINS        1024
+#define AUDIO_SAMPLES_2    11
+#define NUM_BANDS          33
 #define AMPLITUDE         300         // Depending on your audio source level, you may need to alter this value. Can be used as a 'sensitivity' control.
 #define LED_DATA_PIN       12
 #define LED_CLOCK_PIN      14
-#define BRIGHNESS         255         // Brightness 0 - 255, 
+#define BRIGHTNESS        255         // Brightness 0 - 255, 
 #define NOISE             100         // Used as a crude noise filter, values below this are ignored
 #define BAND_HUE_STEP   (200/NUM_BANDS)
 
@@ -52,12 +52,29 @@ TaskHandle_t Task2;
 
 const   i2s_port_t I2S_PORT = I2S_NUM_0;
 
+uint8_t windowing_type = FFT_WIN_TYP_HANN ;
+/*
+ * Windowing types
+ *  FFT_WIN_TYP_RECTANGLE
+ *  FFT_WIN_TYP_HAMMING
+ *  FFT_WIN_TYP_HANN
+ *  FFT_WIN_TYP_TRIANGLE
+ *  FFT_WIN_TYP_NUTTALL
+ *  FFT_WIN_TYP_BLACKMAN
+ *  FFT_WIN_TYP_BLACKMAN_NUTTALL
+ *  FFT_WIN_TYP_BLACKMAN_HARRIS
+ *  FFT_WIN_TYP_FLT_TOP
+ *  FFT_WIN_TYP_WELCH
+ */
+ 
 int32_t audioBuffer[AUDIO_SAMPLES];
 int8_t  bufferStatus = BUFFER_READY;
 double  vReal[AUDIO_SAMPLES];
 double  vImag[AUDIO_SAMPLES];
+double  weights[AUDIO_SAMPLES];
+
 uint32_t bandValues[NUM_BANDS];
-uint16_t bandMaxBin[NUM_BANDS] = {1,2,3,4,5,6,8,10,13,16,20,25,32,40,51,64,80,101,127,160,202,255,321,404,512};
+uint16_t bandMaxBin[NUM_BANDS] = {4,5,6,7,9,10,12,15,18,21,25,29,35,42,50,59,70,83,99,118,140,167,198,236,280,333,396,471,560,666,793,943,1024};
 
 arduinoFFT FFT = arduinoFFT(vReal, vImag, AUDIO_SAMPLES, SAMPLING_FREQ);
 CRGB       leds[NUM_LEDS];
@@ -65,8 +82,9 @@ CRGB       leds[NUM_LEDS];
 void setup() {
   Serial.begin(250000); 
   memset(audioBuffer, 1, sizeof(audioBuffer));
-  init_wifi("HACKYOU", "RobotsRule", "ORGAN");
-  webota.init(80, "/organ");
+  
+  // init_wifi("HACKYOU", "RobotsRule", "ORGAN");
+  // webota.init(80, "/organ");
   
   //create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
   xTaskCreatePinnedToCore(
@@ -182,12 +200,21 @@ void FFTcode( void * pvParameters ){
   }
   FastLED.show();
 
+  // Load up the windowing weights
+  for (int i=0; i < AUDIO_SAMPLES; i++) {
+    weights[i] = 1.0;
+  }
+  FFT.Windowing(weights, AUDIO_SAMPLES, windowing_type, FFT_FORWARD);
+
   //  ######## LOOP #########
   for(;;){
     // Wait till the sample buffer is filled by other CPU core.
     if (bufferStatus == BUFFER_FULL) {
 
       startFFT = micros();
+
+      // Clear out imaginary values;
+      memset((void *)vImag, 0, sizeof(vImag));
 
       // Remove DC component
       bufferDC = 0;
@@ -196,9 +223,9 @@ void FFTcode( void * pvParameters ){
       }      
       bufferDC = bufferDC >> AUDIO_SAMPLES_2;
 
-      // transfer buffer into real values and remove dc component
+      // transfer audio buffer into real values while removing DC component
       for (uint16_t i = 0; i < AUDIO_SAMPLES; i++) {
-        vReal[i]  = audioBuffer[i] - bufferDC;
+        vReal[i]  = (double)(audioBuffer[i] - bufferDC) * weights[i];
       }      
 
       // Release the buffer so the other CPU can start taking samples again.
@@ -206,8 +233,7 @@ void FFTcode( void * pvParameters ){
       delay(1);
 
       // Now do the FFT while recording new samples
-      memset((void *)vImag, 0, sizeof(vImag));
-      FFT.Windowing(FFT_WIN_TYP_HAMMING, FFT_FORWARD);
+//      FFT.Windowing(windowing_type, FFT_FORWARD);
       FFT.Compute(FFT_FORWARD);
       FFT.ComplexToMagnitude();
 
@@ -230,12 +256,12 @@ void FFTcode( void * pvParameters ){
       FastLED.show();
 
       // Display processing times
-      // uint32_t temp = micros();
-      // Serial.print("Cycle = ");
-      // Serial.print(temp - lastFFT );
-      // Serial.print(" (");
-      // Serial.print(startFFT - lastFFT);
-      // Serial.println(")");
+       uint32_t temp = micros();
+       Serial.print("Cycle = ");
+       Serial.print(temp - lastFFT );
+       Serial.print(" (");
+       Serial.print(startFFT - lastFFT);
+       Serial.println(")");
       
       lastFFT = micros();
       
@@ -246,12 +272,12 @@ void FFTcode( void * pvParameters ){
 }
 
 void loop() {
-  webota.handle();
+ //  webota.handle();
 }
 
 void  fillBuckets (void){
   uint16_t  bucket; 
-  uint16_t  minBucket = 1; // skip over the DC level, and start with second freq.
+  uint16_t  minBucket = 2; // skip over the DC level, and start with second freq.
   uint16_t  maxBucket = 0; 
   uint32_t  bandValue;
 
