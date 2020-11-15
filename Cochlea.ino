@@ -18,7 +18,7 @@
 #define FASTLED_INTERNAL
 #include <FastLED.h>
 #include "driver/i2s.h"
-#include "arduinoFFT.h"
+#include "arduinoFFT_float.h"
 #include "WebOTA.h"
 
 void  fillBuckets (void);
@@ -27,11 +27,11 @@ TaskHandle_t Task1;
 TaskHandle_t Task2;
 
 ///=================  Shared Data =================
-#define SAMPLING_FREQ   32000
+#define SAMPLING_FREQ   44100
 #define AUDIO_SAMPLES    2048
 #define FREQ_BINS        1024
 #define AUDIO_SAMPLES_2    11
-#define NUM_BANDS          33
+#define NUM_BANDS          35
 #define AMPLITUDE         300         // Depending on your audio source level, you may need to alter this value. Can be used as a 'sensitivity' control.
 #define LED_DATA_PIN       12
 #define LED_CLOCK_PIN      14
@@ -69,14 +69,15 @@ uint8_t windowing_type = FFT_WIN_TYP_HANN ;
  
 int32_t audioBuffer[AUDIO_SAMPLES];
 int8_t  bufferStatus = BUFFER_READY;
-double  vReal[AUDIO_SAMPLES];
-double  vImag[AUDIO_SAMPLES];
-double  weights[AUDIO_SAMPLES];
+float  vReal[AUDIO_SAMPLES];
+float  vImag[AUDIO_SAMPLES];
+float  weights[AUDIO_SAMPLES];
 
 uint32_t bandValues[NUM_BANDS];
-uint16_t bandMaxBin[NUM_BANDS] = {4,5,6,7,9,10,12,15,18,21,25,29,35,42,50,59,70,83,99,118,140,167,198,236,280,333,396,471,560,666,793,943,1024};
+uint16_t bandMaxBin[NUM_BANDS] = {2,3,4,5,6,7,8,9,11,13,15,18,21,25,29,35,41,48,56,66,78,92,108,127,150,176,208,244,288,339,399,469,553,650,766
+};
 
-arduinoFFT FFT = arduinoFFT(vReal, vImag, AUDIO_SAMPLES, SAMPLING_FREQ);
+arduinoFFT_float FFT = arduinoFFT_float(vReal, vImag, AUDIO_SAMPLES, SAMPLING_FREQ);
 CRGB       leds[NUM_LEDS];
 
 void setup() {
@@ -225,7 +226,8 @@ void FFTcode( void * pvParameters ){
 
       // transfer audio buffer into real values while removing DC component
       for (uint16_t i = 0; i < AUDIO_SAMPLES; i++) {
-        vReal[i]  = (double)(audioBuffer[i] - bufferDC) * weights[i];
+        vReal[i]  = (float)(audioBuffer[i] - bufferDC) * weights[i];
+//        vReal[i]  = audioBuffer[i] - bufferDC;
       }      
 
       // Release the buffer so the other CPU can start taking samples again.
@@ -233,14 +235,14 @@ void FFTcode( void * pvParameters ){
       delay(1);
 
       // Now do the FFT while recording new samples
-//      FFT.Windowing(windowing_type, FFT_FORWARD);
+      // FFT.Windowing(windowing_type, FFT_FORWARD);
       FFT.Compute(FFT_FORWARD);
       FFT.ComplexToMagnitude();
 
       // Allocate FFT results into LED buckets
       fillBuckets ();
       
-      // Process the LED buckets into bar heights
+      // Process the LED buckets into LED Intensities
       for (byte band = 0; band < NUM_BANDS; band++) {
         
         // Scale the bars for the display
