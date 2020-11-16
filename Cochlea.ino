@@ -67,15 +67,14 @@ uint8_t windowing_type = FFT_WIN_TYP_HANN ;
  *  FFT_WIN_TYP_WELCH
  */
  
-int32_t audioBuffer[AUDIO_SAMPLES];
-int8_t  bufferStatus = BUFFER_READY;
-float  vReal[AUDIO_SAMPLES];
-float  vImag[AUDIO_SAMPLES];
-float  weights[AUDIO_SAMPLES];
+int32_t   audioBuffer[AUDIO_SAMPLES];
+int8_t    bufferStatus = BUFFER_READY;
+float     vReal[AUDIO_SAMPLES];
+float     vImag[AUDIO_SAMPLES];
+float     weights[AUDIO_SAMPLES];
 
-uint32_t bandValues[NUM_BANDS];
-uint16_t bandMaxBin[NUM_BANDS] = {2,3,4,5,6,7,8,9,11,13,15,18,21,25,29,35,41,48,56,66,78,92,108,127,150,176,208,244,288,339,399,469,553,650,766
-};
+uint32_t  bandValues[NUM_BANDS];
+uint16_t  bandMaxBin[NUM_BANDS] = {2,3,4,5,6,7,8,9,11,13,16,19,22,27,32,38,45,53,63,75,89,106,127,150,179,213,253,301,358,426,506,602,716,851,1012};
 
 arduinoFFT_float FFT = arduinoFFT_float(vReal, vImag, AUDIO_SAMPLES, SAMPLING_FREQ);
 CRGB       leds[NUM_LEDS];
