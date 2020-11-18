@@ -1,5 +1,5 @@
 /* ==================================================================
-  Cochlea.ino       TheVisual Ear. 
+  Cochlea.ino       The Visual Ear. 
   (c) 2020 Phil Malone
   
   This version has the following attributes:
@@ -49,6 +49,9 @@ TaskHandle_t FFTTask;
 #define BURSTS_PER_AUDIO    4                     // Number of Burst Buffers used to create a single Audio Packet
 #define NUM_BURSTS        (BURSTS_PER_AUDIO + 2)  // Total number of Burst Buffers. Should be at least one larger than BURSTS Per AUDIO
 #define UNUSED_AUDIO_BITS  16                     // Bits do discard from the 32 bit audio sample.
+#define MIC_DATA_PIN        33                    // Serial Data (SD)
+#define MIC_CLOCK_PIN       26                    // Serial Clock (SCK)
+#define MIC_SEL_PIN         25                    // Word Select (WS)
 
 // -- FFT Constants
 #define FFT_SAMPLES       4096                    // Number of samples used to do FFT.  (BURST_SAMPLES * BURSTS_PER_AUDIO)
@@ -136,9 +139,9 @@ void AudioSample( void * pvParameters ){
   // The I2S config as per the example
   const i2s_config_t i2s_config = {
     .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX),  // Receive, not transfer
-    .sample_rate = SAMPLING_FREQ,                       // 40960 Hz
+    .sample_rate = SAMPLING_FREQ,                       // 
     .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,       // could only get it to work with 32bits
-    .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,        // use right channel
+    .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,        // use left channel
     .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
     .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,           // Interrupt level 1
     .dma_buf_count = 4,                                 // number of buffers
@@ -147,10 +150,10 @@ void AudioSample( void * pvParameters ){
 
   // The pin config as per the setup
   const i2s_pin_config_t pin_config = {
-    .bck_io_num = 26,                                   // Serial Clock (SCK)
-    .ws_io_num = 25,                                    // Word Select (WS)
+    .bck_io_num = MIC_CLOCK_PIN,                        // Serial Clock (SCK)
+    .ws_io_num = MIC_SEL_PIN,                           // Word Select (WS)
     .data_out_num = I2S_PIN_NO_CHANGE,                  // not used (only for speakers)
-    .data_in_num = 33                                   // Serial Data (SD)
+    .data_in_num = MIC_DATA_PIN                         // Serial Data (SD)
   };
 
   Serial.print("Audio Sample Started on core ");
