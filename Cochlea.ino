@@ -73,13 +73,7 @@ TaskHandle_t FFTTask;
 // -- Audio Data
 const     i2s_port_t I2S_PORT = I2S_NUM_0;
 int8_t    nowFilling = 0;
-int32_t   audioBuffer0[BURST_SAMPLES];
-int32_t   audioBuffer1[BURST_SAMPLES];
-int32_t   audioBuffer2[BURST_SAMPLES];
-int32_t   audioBuffer3[BURST_SAMPLES];
-int32_t   audioBuffer4[BURST_SAMPLES];
-int32_t   audioBuffer5[BURST_SAMPLES];
-int32_t   * audioBuffers[NUM_BURSTS] = {audioBuffer0, audioBuffer1, audioBuffer2, audioBuffer3, audioBuffer4, audioBuffer5}; 
+int32_t   audioBuffers[NUM_BURSTS][BURST_SAMPLES]; // Storage for multiple Bursts of audio input.  Allows overlaid save and read operations.
 
 // -- FFT Data
 int8_t    windowing_type = FFT_WIN_TYP_HANN ;
