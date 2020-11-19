@@ -42,20 +42,22 @@ TaskHandle_t FFTTask;
 //  =================  Multi-Task Shared Data =================
 
 // -- Audio Constants
-#define SAMPLING_FREQ   36000                     // Frequency at which microphone is sampled
-#define BURST_SAMPLES    1024                     // Number of audio samples taken in one "Burst"
-#define BURST_SAMPLES_AVG  10                     // Bit shift required to average one full Burst
-#define SIZEOF_BURST      (BURST_SAMPLES << 2)    // Number of bytes in a Burst Buffer
-#define BURSTS_PER_AUDIO    4                     // Number of Burst Buffers used to create a single Audio Packet
-#define NUM_BURSTS        (BURSTS_PER_AUDIO + 2)  // Total number of Burst Buffers. Should be at least one larger than BURSTS Per AUDIO
-#define UNUSED_AUDIO_BITS  16                     // Bits do discard from the 32 bit audio sample.
 #define MIC_DATA_PIN        33                    // Serial Data (SD)
 #define MIC_CLOCK_PIN       26                    // Serial Clock (SCK)
 #define MIC_SEL_PIN         25                    // Word Select (WS)
+#define UNUSED_AUDIO_BITS   16                    // Bits do discard from the 32 bit audio sample.
+
+const uint16_t SAMPLING_FREQ     = 36000;                     // Frequency at which microphone is sampled
+const uint16_t BURST_SAMPLES     =   512;                     // Number of audio samples taken in one "Burst"
+const uint16_t BURST_SAMPLES_AVG =     9;                     // Bit shift required to average one full Burst
+const uint16_t BURSTS_PER_AUDIO  =     8;                     // Number of Burst Buffers used to create a single Audio Packet
+const uint16_t EXTRA_BURSTS      =     2;                     // Extra Burst packets to avoid overlap
+const uint16_t NUM_BURSTS        = (BURSTS_PER_AUDIO + EXTRA_BURSTS);
+const uint16_t SIZEOF_BURST      = (BURST_SAMPLES << 2);      // Number of bytes in a Burst Buffer
 
 // -- FFT Constants
-#define FFT_SAMPLES       4096                    // Number of samples used to do FFT.  (BURST_SAMPLES * BURSTS_PER_AUDIO)
-#define FREQ_BINS         2048                    // Number or resulting Frequency Bins after FFT is done
+const uint16_t FFT_SAMPLES = BURST_SAMPLES * BURSTS_PER_AUDIO; // Number of samples used to do FFT.  (BURST_SAMPLES * BURSTS_PER_AUDIO)
+const uint16_t FREQ_BINS   = (FFT_SAMPLES >> 1);              // Number or resulting Frequency Bins after FFT is done
 
 // -- LED Display Constants
 #define NUM_BANDS           42                    // Number of frequency bands being displayed as LEDs = Number of LEDs
@@ -68,7 +70,10 @@ TaskHandle_t FFTTask;
 #define BAND_HUE_STEP        (200/NUM_BANDS)      // How much the LED Hue changes for each band.
 
 //=================  Shared Data =================
-
+// Timing Data
+uint32_t  audioCyclePeriod;
+uint32_t  FFTCyclePeriod;
+uint32_t  FFTConvertTime;
 
 // -- Audio Data
 const     i2s_port_t I2S_PORT = I2S_NUM_0;
@@ -129,6 +134,8 @@ void AudioSample( void * pvParameters ){
 
   int32_t   sample;
   size_t    bytesRead;
+  uint32_t  thisCycle;
+  uint32_t  lastCycle;
   
   // The I2S config as per the example
   const i2s_config_t i2s_config = {
@@ -161,15 +168,16 @@ void AudioSample( void * pvParameters ){
   // ======= Audio Sample LOOP =============
   // Repeatedly fill sucessive Burst Buffers.  Try not to have ANY discontinuity.
   while(true){
+    thisCycle = micros();
+    audioCyclePeriod = (thisCycle - lastCycle);
+    lastCycle = thisCycle;
+
     // Start filling the current Burst Buffer
     i2s_read(I2S_PORT, (char *)(audioBuffers[nowFilling]), SIZEOF_BURST, &bytesRead, 100);
 
     // Move onto next burst buffer if all bytes were read
     if (bytesRead == SIZEOF_BURST)
       nowFilling = (nowFilling + 1) % NUM_BURSTS ;
-
-    // Delay for this core's idle task to run
-    delayMicroseconds(5);
   } 
 }
 
@@ -178,6 +186,8 @@ void AudioSample( void * pvParameters ){
 // FFTcode: Process each new Burst buffer
 // ###############################################################
 void FFTcode( void * pvParameters ){
+  uint32_t  thisCycle;
+  uint32_t  lastCycle;
   
   Serial.print("FFT Started on core ");
   Serial.println(xPortGetCoreID());
@@ -195,23 +205,34 @@ void FFTcode( void * pvParameters ){
     if (nowProcessing != nowFilling) {
       nowProcessing = nowFilling;
 
+      thisCycle = micros();
+      FFTCyclePeriod = (thisCycle - lastCycle);
+      lastCycle = thisCycle;
+
       // Process the prior Burts as a single audio packet, then display the band intensities.
       ComputeMyFFT();
       updateDisplay();
-      delay(1);
+      FFTConvertTime = micros() - thisCycle;
+            
+      // Give time for idle task to run.
     }
-
-    // Delay to enable the idle task to run on this core.
-    delayMicroseconds(50);
+    delay(1);  
   }
 }
 
+// -- Display Processing & cycle times
 void loop() {
- //  Nothing to do here
+  Serial.print("AC=");
+  Serial.print(audioCyclePeriod);
+  Serial.print(" uS, FFTC=");
+  Serial.print(FFTCyclePeriod);
+  Serial.print(" uS, FFT=");
+  Serial.print(FFTConvertTime);
+  Serial.println(" uS");
+  delay(1000);
 }
 
 // -- Process a group of Audio bursts, and generate an array of frequency bins.
-
 void ComputeMyFFT(void) {
   
   int32_t   bufferDC = 0;
