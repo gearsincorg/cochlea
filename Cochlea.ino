@@ -10,9 +10,9 @@
   Number of LEDs    42
   
   Mic Type          I2S
-  Mic Data          33
   Mic Clk           26
-  Mic WS            25
+  Mic Data          25
+  Mic WS            33
   Sample Freq       36 kHz
   Samples per burst 1024
   Number of Bursts  6
@@ -42,9 +42,9 @@ TaskHandle_t FFTTask;
 //  =================  Multi-Task Shared Data =================
 
 // -- Audio Constants
-#define MIC_DATA_PIN        33                    // Serial Data (SD)
 #define MIC_CLOCK_PIN       26                    // Serial Clock (SCK)
-#define MIC_SEL_PIN         25                    // Word Select (WS)
+#define MIC_DATA_PIN        25                    // Serial Data (SD)
+#define MIC_SEL_PIN         33                    // Word Select (WS)
 #define UNUSED_AUDIO_BITS   16                    // Bits do discard from the 32 bit audio sample.
 
 const uint16_t SAMPLING_FREQ     = 36000;                     // Frequency at which microphone is sampled
@@ -60,7 +60,7 @@ const uint16_t FFT_SAMPLES = BURST_SAMPLES * BURSTS_PER_AUDIO; // Number of samp
 const uint16_t FREQ_BINS   = (FFT_SAMPLES >> 1);              // Number or resulting Frequency Bins after FFT is done
 
 // -- LED Display Constants
-#define NUM_BANDS           42                    // Number of frequency bands being displayed as LEDs = Number of LEDs
+#define NUM_BANDS           59                    // Number of frequency bands being displayed as LEDs = Number of LEDs
 #define LED_DATA_PIN        12            
 #define LED_CLOCK_PIN       14
 #define BRIGHTNESS         255                    // Max LED Brightness
@@ -89,7 +89,7 @@ float     weights[FFT_SAMPLES];
 
 // -- LED Display Data
 uint32_t  bandValues[NUM_BANDS];
-uint16_t  bandMaxBin[NUM_BANDS] = {7,8,9,10,12,13,15,18,20,23,27,31,35,41,47,54,62,71,82,94,108,124,142,163,187,215,247,284,326,375,430,494,568,652,749,861,989,1136,1304,1498,1721,2047};
+uint16_t  bandMaxBin[NUM_BANDS] = {6,7,8,9,10,11,12,13,15,16,18,20,22,24,26,29,32,35,39,43,48,53,58,64,71,78,86,95,105,116,128,142,157,173,191,211,233,257,284,313,346,382,421,465,514,567,626,691,763,843,930,1027,1134,1252,1383,1526,1685,1861,2047};
 
 // -- Object Constructors
 arduinoFFT_float FFT = arduinoFFT_float(vReal, vImag, FFT_SAMPLES, SAMPLING_FREQ);
@@ -272,7 +272,7 @@ void  initDisplay(void) {
   // preload the hue into each LED and set the saturation to full and brightness to low.
   // This is a startup test to show that ALL LEDs are capable of displaying their base color.
   for (int i = 0; i < NUM_BANDS; i++) {
-    leds[i] = CHSV(i * BAND_HUE_STEP , 255, 10);
+    leds[i] = CHSV(i * BAND_HUE_STEP , 255, 100);
   }
   FastLED.show();
 }
