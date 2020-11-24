@@ -1,4 +1,9 @@
-Visual Cochlea project
+Visual Ear project
+By Phil Malone
+Phil.Malone@Mr-Phil.com
+11/24/2020
+
+https://hackaday.io/project/175944-the-visual-ear 
  
  This project is an experiment in audio perception.
  My goal was to produce a visual display that might help a deaf person experience sound.
