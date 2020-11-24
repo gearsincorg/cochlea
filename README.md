@@ -17,3 +17,10 @@ Visual Cochlea project
  There is nothing new about visual audio-spectrum displays, but I decided that it would be important to provide MUCH finer spectral resolution, while still maintaining near real-time response.
 
  I decided to do some research and experiments to determine what was possible.
+
+ > A lot of what I developed here was influenced strongly by Steve Marley https://github.com/s-marley/ESP32_FFT_VU
+ 
+ > An explanation of the Spreadsheet used to determine the Band Bins is found here: https://www.youtube.com/watch?v=Mgh2WblO5_c
+ 
+ > This project adapts the FFT library found here : https://github.com/kosme/arduinoFFT
+ 
