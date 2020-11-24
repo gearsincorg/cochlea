@@ -128,7 +128,7 @@ void setup() {
 
 // ###############################################################
 //  Core 1 Task.
-//  AudioSample: Sample the microphone and fill Bures buffers with audio
+//  AudioSample: Sample the microphone and fill Burst buffers with audio
 // ###############################################################
 void AudioSample( void * pvParameters ){
 
@@ -141,7 +141,7 @@ void AudioSample( void * pvParameters ){
   const i2s_config_t i2s_config = {
     .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX),  // Receive, not transfer
     .sample_rate = SAMPLING_FREQ,                       // 
-    .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,       // could only get it to work with 32bits
+    .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,       // Chosen Mic puts out 32 bits per channel
     .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,        // use left channel
     .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
     .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,           // Interrupt level 1
@@ -183,7 +183,7 @@ void AudioSample( void * pvParameters ){
 
 // ###############################################################
 // Core 0 Task.
-// FFTcode: Process each new Burst buffer
+// FFTcode: Process each new Burst buffer and display it.
 // ###############################################################
 void FFTcode( void * pvParameters ){
   uint32_t  thisCycle;
