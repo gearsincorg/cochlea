@@ -61,6 +61,7 @@ const uint16_t FREQ_BINS   = (FFT_SAMPLES >> 1);              // Number or resul
 
 // -- LED Display Constants
 #define NUM_BANDS           59                    // Number of frequency bands being displayed as LEDs = Number of LEDs
+#define NUM_LEDS            (NUM_BANDS * 2)       // Number of frequency bands being displayed as LEDs = Number of LEDs
 #define LED_DATA_PIN        12            
 #define LED_CLOCK_PIN       14
 #define BRIGHTNESS         255                    // Max LED Brightness
@@ -93,13 +94,13 @@ uint16_t  bandMaxBin[NUM_BANDS] = {6,7,8,9,10,11,12,13,15,16,18,20,22,24,26,29,3
 
 // -- Object Constructors
 arduinoFFT_float FFT = arduinoFFT_float(vReal, vImag, FFT_SAMPLES, SAMPLING_FREQ);
-CRGB       leds[NUM_BANDS];
+CRGB       leds[NUM_LEDS];
 
 // -- General Setup
 void setup() {
 
   // Setup High Speed Serial
-  Serial.begin(1000000); 
+  Serial.begin(500000); 
   initDisplay();
   Serial.println("\nCochlea Started.");
 
@@ -266,13 +267,14 @@ void ComputeMyFFT(void) {
 
 // Configure the LED string and preload the color values for each band.
 void  initDisplay(void) {
-  FastLED.addLeds<DOTSTAR, LED_DATA_PIN, LED_CLOCK_PIN, BGR>(leds, NUM_BANDS);
+  FastLED.addLeds<DOTSTAR, LED_DATA_PIN, LED_CLOCK_PIN, BGR>(leds, NUM_LEDS);
   FastLED.setBrightness(BRIGHTNESS);
 
   // preload the hue into each LED and set the saturation to full and brightness to low.
   // This is a startup test to show that ALL LEDs are capable of displaying their base color.
   for (int i = 0; i < NUM_BANDS; i++) {
-    leds[i] = CHSV(i * BAND_HUE_STEP , 255, 100);
+    leds[(i*2)    ] = CHSV(i * BAND_HUE_STEP , 255, 100);
+    // leds[(i*2) + 1] = CHSV(i * BAND_HUE_STEP , 255, 100);
   }
   FastLED.show();
 }
@@ -293,7 +295,8 @@ void  updateDisplay (void){
       ledBrightness = BRIGHTNESS;
   
     // Display LED bucket in the correct Hue.
-    leds[band].setHSV(band * BAND_HUE_STEP, 255, ledBrightness);
+    leds[(band * 2)    ].setHSV(band * BAND_HUE_STEP, 255, ledBrightness);
+    // leds[(band * 2) + 1].setHSV(band * BAND_HUE_STEP, 255, ledBrightness);
   }
   
   // Update LED display
